@@ -7,218 +7,313 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:#000; font-family:'Roboto',sans-serif; height:100vh; overflow:hidden; user-select:none; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { background: #000; font-family: 'Roboto', sans-serif; height: 100vh; overflow: hidden; }
-
-  /* ── VIDEOS ── */
+  /* VIDEOS */
   #remote-video {
-    width: 100vw; height: 100vh; object-fit: cover;
-    position: fixed; top: 0; left: 0; z-index: 0;
-    background: #111;
+    width:100vw; height:100vh; object-fit:cover;
+    position:fixed; top:0; left:0; z-index:0; background:#111;
   }
   #local-video {
-    width: 110px; height: 150px; object-fit: cover;
-    position: fixed; top: 16px; right: 16px; z-index: 10;
-    border-radius: 12px; border: 2px solid rgba(255,255,255,0.5);
+    width:90px; height:120px; object-fit:cover;
+    position:fixed; top:12px; right:12px; z-index:10;
+    border-radius:10px; border:2px solid rgba(255,255,255,0.4);
   }
 
-  /* ── TOP BAR (OmeTV style) ── */
-  #topbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-    padding: 10px 16px;
-    display: flex; align-items: center; justify-content: space-between;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
-  }
-  #logo { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
-  #logo span { color: #f93; }
-  #online-count { color: rgba(255,255,255,0.8); font-size: 13px; }
-
-  /* ── BOTTOM CONTROLS ── */
-  #controls {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-    padding: 16px 24px 32px;
-    display: flex; align-items: center; justify-content: center; gap: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-  }
-  .btn {
-    border: none; cursor: pointer; border-radius: 50px;
-    font-family: 'Roboto', sans-serif; font-weight: 600;
-    font-size: 15px; padding: 14px 32px;
-    transition: transform 0.1s, opacity 0.1s;
-    active-transform: scale(0.96);
-  }
-  .btn:active { transform: scale(0.94); opacity: 0.85; }
-  #btn-stop  { background: rgba(255,255,255,0.15); color: #fff; backdrop-filter: blur(6px); }
-  #btn-next  { background: #f93; color: #fff; padding: 14px 44px; font-size: 16px; }
-
-  /* ── LOADING / STATUS OVERLAY ── */
-  #overlay {
-    position: fixed; inset: 0; z-index: 30;
-    background: #1a1a1a;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 18px;
-  }
-  #overlay-logo { font-size: 36px; font-weight: 700; color: #fff; letter-spacing: 2px; }
-  #overlay-logo span { color: #f93; }
-  #overlay-msg { color: rgba(255,255,255,0.6); font-size: 15px; }
-
-  .spinner {
-    width: 40px; height: 40px;
-    border: 3px solid rgba(255,255,255,0.15);
-    border-top-color: #f93;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── SKIP FLASH ── */
+  /* SKIP FLASH */
   #skip-flash {
-    position: fixed; inset: 0; z-index: 25;
-    background: #000;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.12s;
+    position:fixed; inset:0; z-index:25; background:#000;
+    opacity:0; pointer-events:none; transition:opacity 0.1s;
   }
-  #skip-flash.flash { opacity: 1; }
+  #skip-flash.flash { opacity:1; }
 
-  /* ── COUNTRY TAG ── */
-  #country-tag {
-    position: fixed; bottom: 110px; left: 16px; z-index: 20;
-    background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
-    color: #fff; font-size: 13px; padding: 5px 12px;
-    border-radius: 20px; display: none;
+  /* BOTTOM CONTROLS */
+  #controls {
+    position:fixed; bottom:0; left:0; right:0; z-index:20;
+    padding:12px 16px 28px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px;
+    background:linear-gradient(to top, rgba(0,0,0,0.65) 60%, transparent);
+  }
+  .ctrl-btn {
+    border:none; cursor:pointer; border-radius:50px;
+    font-family:'Roboto',sans-serif; font-weight:600;
+    font-size:14px; padding:12px 0; flex:1;
+    transition:transform 0.1s, opacity 0.1s;
+  }
+  .ctrl-btn:active { transform:scale(0.94); opacity:0.8; }
+  #btn-stop  { background:rgba(255,255,255,0.18); color:#fff; backdrop-filter:blur(6px); max-width:130px; }
+  #btn-next  { background:#ff9800; color:#fff; font-size:15px; max-width:200px; }
+
+  /* EMOJI ROW */
+  #emoji-row {
+    position:fixed; bottom:90px; left:0; right:0; z-index:20;
+    display:flex; justify-content:space-around; align-items:center;
+    padding:0 10px;
+  }
+  .emoji-btn {
+    background:none; border:none; font-size:26px; cursor:pointer;
+    opacity:0.85; transition:transform 0.15s;
+  }
+  .emoji-btn:active { transform:scale(1.3); }
+
+  /* REPORT / FLAG */
+  #flag-btn {
+    position:fixed; top:12px; left:12px; z-index:20;
+    background:none; border:none; color:rgba(255,255,255,0.5);
+    font-size:22px; cursor:pointer; display:none;
   }
 
-  /* ── REPORT ICON (cosmetic) ── */
-  #report-btn {
-    position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
-    z-index: 20; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-    border: none; color: rgba(255,255,255,0.55); font-size: 12px;
-    padding: 5px 14px; border-radius: 20px; cursor: pointer; display: none;
+  /* ── WAITING / STATIC OVERLAY ── */
+  #overlay {
+    position:fixed; inset:0; z-index:30;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    background:#1c1c1c;
+    overflow:hidden;
   }
+
+  #overlay::before {
+    content:'';
+    position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+    background-size:256px 256px;
+    opacity:0.35;
+    pointer-events:none;
+  }
+
+  /* Two avatar boxes like real OmeTV */
+  #avatar-row {
+    display:flex; align-items:center; justify-content:center;
+    gap:0; margin-bottom:18px; position:relative; z-index:1;
+  }
+  .avatar-box {
+    width:100px; height:100px; background:#2a2a2a;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .avatar-box:first-child { border-radius:12px 0 0 12px; }
+  .avatar-box:last-child  { border-radius:0 12px 12px 0; }
+  .avatar-box svg { width:70px; height:70px; opacity:0.6; }
+
+  #overlay-next-wrap {
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:18px; position:relative; z-index:1;
+  }
+  #overlay-next-dot {
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,0.15);
+    display:flex; align-items:center; justify-content:center;
+  }
+  #overlay-next-dot::after {
+    content:''; display:block;
+    width:0; height:0;
+    border-top:8px solid transparent;
+    border-bottom:8px solid transparent;
+    border-left:13px solid rgba(255,255,255,0.7);
+    margin-left:3px;
+  }
+  #overlay-next-label {
+    color:rgba(255,255,255,0.7); font-size:15px; font-weight:500; letter-spacing:1px;
+  }
+
+  #online-count {
+    color:rgba(255,255,255,0.55); font-size:14px;
+    position:relative; z-index:1; margin-bottom:6px;
+  }
+
+  /* Bottom filter buttons on overlay */
+  #overlay-filters {
+    position:absolute; bottom:28px; left:0; right:0;
+    display:flex; gap:10px; padding:0 16px;
+  }
+  .filter-btn {
+    flex:1; background:rgba(35,35,35,0.95); border:none; border-radius:10px;
+    color:#fff; font-size:14px; font-weight:500; padding:14px 0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+
+  /* Searching spinner state */
+  #search-state {
+    display:none; flex-direction:column;
+    align-items:center; gap:14px;
+    position:relative; z-index:1;
+  }
+  .spinner {
+    width:44px; height:44px;
+    border:3px solid rgba(255,255,255,0.12);
+    border-top-color:#ff9800;
+    border-radius:50%;
+    animation:spin 0.75s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #search-label { color:rgba(255,255,255,0.5); font-size:14px; }
 </style>
 </head>
 <body>
 
 <video id="remote-video" autoplay playsinline></video>
 <video id="local-video"  autoplay playsinline muted></video>
-
-<!-- Top bar -->
-<div id="topbar">
-  <div id="logo">Ome<span>TV</span></div>
-  <div id="online-count">🟢 47,382 online</div>
-</div>
-
-<!-- Skip flash effect -->
 <div id="skip-flash"></div>
 
-<!-- Country tag -->
-<div id="country-tag">🇺🇸 United States</div>
+<button id="flag-btn">⚑</button>
 
-<!-- Report button (cosmetic) -->
-<button id="report-btn">⚑ Report</button>
-
-<!-- Bottom controls -->
-<div id="controls">
-  <button class="btn" id="btn-stop">Stop</button>
-  <button class="btn" id="btn-next">Next ▶</button>
+<div id="emoji-row" style="display:none">
+  <button class="emoji-btn">❤️</button>
+  <button class="emoji-btn">😂</button>
+  <button class="emoji-btn">👍</button>
+  <button class="emoji-btn">😊</button>
+  <button class="emoji-btn">👌</button>
+  <button class="emoji-btn">😍</button>
+  <button class="emoji-btn">💬</button>
 </div>
 
-<!-- Loading overlay -->
+<div id="controls" style="display:none">
+  <button class="ctrl-btn" id="btn-stop">Stop</button>
+  <button class="ctrl-btn" id="btn-next">Next ▶</button>
+</div>
+
+<!-- MAIN OVERLAY -->
 <div id="overlay">
-  <div id="overlay-logo">Ome<span>TV</span></div>
-  <div class="spinner"></div>
-  <div id="overlay-msg">Connecting…</div>
+
+  <div id="start-state">
+    <div id="avatar-row">
+      <div class="avatar-box">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="35" r="18" stroke="#aaa" stroke-width="3" fill="none"/>
+          <path d="M20 85 C20 60 80 60 80 85" stroke="#aaa" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <line x1="50" y1="53" x2="50" y2="65" stroke="#aaa" stroke-width="3" stroke-linecap="round"/>
+          <line x1="34" y1="62" x2="50" y2="56" stroke="#aaa" stroke-width="3" stroke-linecap="round"/>
+          <line x1="66" y1="62" x2="50" y2="56" stroke="#aaa" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="avatar-box">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="33" r="16" stroke="#888" stroke-width="3" fill="none"/>
+          <path d="M34 33 Q34 18 50 17 Q66 18 66 33" stroke="#888" stroke-width="2.5" fill="none"/>
+          <path d="M22 85 C22 62 78 62 78 85" stroke="#888" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M38 49 Q50 58 62 49" stroke="#888" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="overlay-next-wrap">
+      <div id="overlay-next-dot"></div>
+      <div id="overlay-next-label">NEXT</div>
+    </div>
+
+    <div id="online-count">● 267,841 users online</div>
+  </div>
+
+  <div id="search-state">
+    <div class="spinner"></div>
+    <div id="search-label">Searching…</div>
+  </div>
+
+  <div id="overlay-filters">
+    <button class="filter-btn" id="ov-btn-i-am">I AM 🙂</button>
+    <button class="filter-btn" id="ov-btn-country">COUNTRY 🇺🇸</button>
+  </div>
+
 </div>
 
 <script>
-  // ─────────────────────────────────────────
-  // CONFIG — must match host.html
-  // ─────────────────────────────────────────
   const BRENT_PEER_ID = "magic-show-brent-2024";
-
-  // How many fake "skips" before connecting to Brent
-  // Set to 0 if you want to connect immediately
   const FAKE_SKIPS = 2;
 
-  // ─────────────────────────────────────────
-  const overlay    = document.getElementById("overlay");
-  const overlayMsg = document.getElementById("overlay-msg");
-  const flash      = document.getElementById("skip-flash");
-  const countryTag = document.getElementById("country-tag");
-  const reportBtn  = document.getElementById("report-btn");
+  const overlay     = document.getElementById("overlay");
+  const startState  = document.getElementById("start-state");
+  const searchState = document.getElementById("search-state");
+  const searchLabel = document.getElementById("search-label");
+  const flash       = document.getElementById("skip-flash");
+  const controls    = document.getElementById("controls");
+  const emojiRow    = document.getElementById("emoji-row");
+  const flagBtn     = document.getElementById("flag-btn");
+  const onlineEl    = document.getElementById("online-count");
 
   let peer, localStream, currentCall;
   let skipsDone = 0;
   let connected = false;
+  let started = false;
 
-  // Fake "searching" durations (ms) for each skip
-  const skipDelays = [1800, 2400, 1600, 2200, 1900];
+  // Fluctuate online count
+  let baseCount = 267841;
+  setInterval(() => {
+    baseCount += Math.floor(Math.random() * 60) - 30;
+    onlineEl.textContent = "● " + baseCount.toLocaleString() + " users online";
+  }, 3000);
 
-  function showOverlay(msg) {
-    overlayMsg.textContent = msg;
+  function showSearch(msg) {
+    startState.style.display = "none";
+    searchState.style.display = "flex";
+    searchLabel.textContent = msg || "Searching…";
     overlay.style.display = "flex";
-    countryTag.style.display = "none";
-    reportBtn.style.display = "none";
+    controls.style.display = "none";
+    emojiRow.style.display = "none";
+    flagBtn.style.display = "none";
+  }
+
+  function showStart() {
+    startState.style.display = "flex";
+    searchState.style.display = "none";
+    overlay.style.display = "flex";
+    controls.style.display = "none";
+    emojiRow.style.display = "none";
+    flagBtn.style.display = "none";
   }
 
   function hideOverlay() {
     overlay.style.display = "none";
-    countryTag.style.display = "block";
-    reportBtn.style.display = "block";
+    controls.style.display = "flex";
+    emojiRow.style.display = "flex";
+    flagBtn.style.display = "block";
   }
 
   function doFlash(cb) {
     flash.classList.add("flash");
-    setTimeout(() => { flash.classList.remove("flash"); cb && cb(); }, 150);
+    setTimeout(() => { flash.classList.remove("flash"); cb && cb(); }, 130);
   }
 
-  // ── Init camera first ──
-  showOverlay("Starting camera…");
-  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+  navigator.mediaDevices.getUserMedia({ video:true, audio:true })
     .then(stream => {
       localStream = stream;
       document.getElementById("local-video").srcObject = stream;
       initPeer();
     })
-    .catch(() => { showOverlay("Camera access denied. Please allow camera & mic."); });
+    .catch(() => { showSearch("Allow camera & mic to continue."); });
 
   function initPeer() {
-    peer = new Peer({ debug: 0 });
-    peer.on("open", () => {
-      showOverlay("Searching…");
-      runFakeSkips();
-    });
-    peer.on("error", err => { showOverlay("Connection error. Check WiFi."); });
+    peer = new Peer({ debug:0 });
+    peer.on("open", () => showStart());
+    peer.on("error", () => showSearch("Connection error."));
   }
 
-  // ── Fake skip sequence ──
+  // Tapping the start screen begins the search
+  startState.addEventListener("click", () => {
+    if (started) return;
+    started = true;
+    doFlash(() => { showSearch("Searching…"); runFakeSkips(); });
+  });
+
+  const skipDelays = [1900, 2300, 1700, 2100];
+
   function runFakeSkips() {
-    if (skipsDone >= FAKE_SKIPS) {
-      connectToBrent();
-      return;
-    }
-    const delay = skipDelays[skipsDone % skipDelays.length];
-    // Show a dark "stranger" briefly before skipping
-    showOverlay("Searching…");
+    if (skipsDone >= FAKE_SKIPS) { connectToBrent(); return; }
     setTimeout(() => {
-      // Flash as if skipping someone
-      doFlash(() => {
-        skipsDone++;
-        showOverlay("Searching…");
-        setTimeout(runFakeSkips, 600);
-      });
-    }, delay);
+      doFlash(() => { skipsDone++; showSearch("Searching…"); setTimeout(runFakeSkips, 500); });
+    }, skipDelays[skipsDone % skipDelays.length]);
   }
 
-  // ── Connect to Brent ──
   function connectToBrent() {
-    showOverlay("Connecting…");
+    showSearch("Connecting…");
     const call = peer.call(BRENT_PEER_ID, localStream);
     currentCall = call;
 
     const timeout = setTimeout(() => {
-      showOverlay("No answer. Make sure Brent has host.html open!");
+      // Silent retry — no error message shown
+      showSearch("Searching…");
+      setTimeout(connectToBrent, 3000);
     }, 10000);
 
     call.on("stream", remoteStream => {
@@ -229,33 +324,32 @@
     });
 
     call.on("close", () => {
-      connected = false;
-      showOverlay("Disconnected.");
+      connected = false; started = false; skipsDone = 0;
+      showStart();
     });
 
     call.on("error", () => {
       clearTimeout(timeout);
-      showOverlay("Call failed. Check Brent's connection.");
+      showSearch("Searching…");
+      setTimeout(connectToBrent, 3000);
     });
   }
 
-  // ── Next button: only works before Brent connects ──
+  // Next button locked once connected
   document.getElementById("btn-next").addEventListener("click", () => {
-    if (connected) return; // Lock "Next" once Brent is on
-    doFlash(() => {
-      skipsDone++;
-      showOverlay("Searching…");
-      setTimeout(runFakeSkips, 400);
-    });
+    if (connected) return;
+    doFlash(() => showSearch("Searching…"));
   });
 
-  // ── Stop button ──
   document.getElementById("btn-stop").addEventListener("click", () => {
     if (currentCall) currentCall.close();
-    connected = false;
-    showOverlay("Tap Next to start.");
-    document.getElementById("btn-next").textContent = "Start ▶";
+    connected = false; started = false; skipsDone = 0;
+    showStart();
   });
+
+  // Cosmetic — stop clicks from bubbling to start-state
+  document.getElementById("ov-btn-i-am").addEventListener("click", e => e.stopPropagation());
+  document.getElementById("ov-btn-country").addEventListener("click", e => e.stopPropagation());
 </script>
 </body>
 </html>
