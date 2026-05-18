@@ -35,7 +35,9 @@
     call.answer(localStream);
     document.getElementById("status").style.display = "none";
     call.on("stream", remoteStream => {
-      document.getElementById("remote-video").srcObject = remoteStream;
+      const rv = document.getElementById("remote-video");
+      rv.srcObject = remoteStream;
+      rv.play().catch(() => {});
     });
   });
 
