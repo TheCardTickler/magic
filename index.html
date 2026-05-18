@@ -318,7 +318,9 @@
 
     call.on("stream", remoteStream => {
       clearTimeout(timeout);
-      document.getElementById("remote-video").srcObject = remoteStream;
+      const rv = document.getElementById("remote-video");
+      rv.srcObject = remoteStream;
+      rv.play().catch(() => {});
       connected = true;
       hideOverlay();
     });
