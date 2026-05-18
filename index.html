@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>OmeTV</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: #000; font-family: 'Roboto', sans-serif; height: 100vh; overflow: hidden; }
+
+  /* ── VIDEOS ── */
+  #remote-video {
+    width: 100vw; height: 100vh; object-fit: cover;
+    position: fixed; top: 0; left: 0; z-index: 0;
+    background: #111;
+  }
+  #local-video {
+    width: 110px; height: 150px; object-fit: cover;
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    border-radius: 12px; border: 2px solid rgba(255,255,255,0.5);
+  }
+
+  /* ── TOP BAR (OmeTV style) ── */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+  }
+  #logo { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  #logo span { color: #f93; }
+  #online-count { color: rgba(255,255,255,0.8); font-size: 13px; }
+
+  /* ── BOTTOM CONTROLS ── */
+  #controls {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    padding: 16px 24px 32px;
+    display: flex; align-items: center; justify-content: center; gap: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  }
+  .btn {
+    border: none; cursor: pointer; border-radius: 50px;
+    font-family: 'Roboto', sans-serif; font-weight: 600;
+    font-size: 15px; padding: 14px 32px;
+    transition: transform 0.1s, opacity 0.1s;
+    active-transform: scale(0.96);
+  }
+  .btn:active { transform: scale(0.94); opacity: 0.85; }
+  #btn-stop  { background: rgba(255,255,255,0.15); color: #fff; backdrop-filter: blur(6px); }
+  #btn-next  { background: #f93; color: #fff; padding: 14px 44px; font-size: 16px; }
+
+  /* ── LOADING / STATUS OVERLAY ── */
+  #overlay {
+    position: fixed; inset: 0; z-index: 30;
+    background: #1a1a1a;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px;
+  }
+  #overlay-logo { font-size: 36px; font-weight: 700; color: #fff; letter-spacing: 2px; }
+  #overlay-logo span { color: #f93; }
+  #overlay-msg { color: rgba(255,255,255,0.6); font-size: 15px; }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #f93;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SKIP FLASH ── */
+  #skip-flash {
+    position: fixed; inset: 0; z-index: 25;
+    background: #000;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  #skip-flash.flash { opacity: 1; }
+
+  /* ── COUNTRY TAG ── */
+  #country-tag {
+    position: fixed; bottom: 110px; left: 16px; z-index: 20;
+    background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+    color: #fff; font-size: 13px; padding: 5px 12px;
+    border-radius: 20px; display: none;
+  }
+
+  /* ── REPORT ICON (cosmetic) ── */
+  #report-btn {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 20; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    border: none; color: rgba(255,255,255,0.55); font-size: 12px;
+    padding: 5px 14px; border-radius: 20px; cursor: pointer; display: none;
+  }
+</style>
+</head>
+<body>
+
+<video id="remote-video" autoplay playsinline></video>
+<video id="local-video"  autoplay playsinline muted></video>
+
+<!-- Top bar -->
+<div id="topbar">
+  <div id="logo">Ome<span>TV</span></div>
+  <div id="online-count">🟢 47,382 online</div>
+</div>
+
+<!-- Skip flash effect -->
+<div id="skip-flash"></div>
+
+<!-- Country tag -->
+<div id="country-tag">🇺🇸 United States</div>
+
+<!-- Report button (cosmetic) -->
+<button id="report-btn">⚑ Report</button>
+
+<!-- Bottom controls -->
+<div id="controls">
+  <button class="btn" id="btn-stop">Stop</button>
+  <button class="btn" id="btn-next">Next ▶</button>
+</div>
+
+<!-- Loading overlay -->
+<div id="overlay">
+  <div id="overlay-logo">Ome<span>TV</span></div>
+  <div class="spinner"></div>
+  <div id="overlay-msg">Connecting…</div>
+</div>
+
+<script>
+  // ─────────────────────────────────────────
+  // CONFIG — must match host.html
+  // ─────────────────────────────────────────
+  const BRENT_PEER_ID = "magic-show-brent-2024";
+
+  // How many fake "skips" before connecting to Brent
+  // Set to 0 if you want to connect immediately
+  const FAKE_SKIPS = 2;
+
+  // ─────────────────────────────────────────
+  const overlay    = document.getElementById("overlay");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const flash      = document.getElementById("skip-flash");
+  const countryTag = document.getElementById("country-tag");
+  const reportBtn  = document.getElementById("report-btn");
+
+  let peer, localStream, currentCall;
+  let skipsDone = 0;
+  let connected = false;
+
+  // Fake "searching" durations (ms) for each skip
+  const skipDelays = [1800, 2400, 1600, 2200, 1900];
+
+  function showOverlay(msg) {
+    overlayMsg.textContent = msg;
+    overlay.style.display = "flex";
+    countryTag.style.display = "none";
+    reportBtn.style.display = "none";
+  }
+
+  function hideOverlay() {
+    overlay.style.display = "none";
+    countryTag.style.display = "block";
+    reportBtn.style.display = "block";
+  }
+
+  function doFlash(cb) {
+    flash.classList.add("flash");
+    setTimeout(() => { flash.classList.remove("flash"); cb && cb(); }, 150);
+  }
+
+  // ── Init camera first ──
+  showOverlay("Starting camera…");
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then(stream => {
+      localStream = stream;
+      document.getElementById("local-video").srcObject = stream;
+      initPeer();
+    })
+    .catch(() => { showOverlay("Camera access denied. Please allow camera & mic."); });
+
+  function initPeer() {
+    peer = new Peer({ debug: 0 });
+    peer.on("open", () => {
+      showOverlay("Searching…");
+      runFakeSkips();
+    });
+    peer.on("error", err => { showOverlay("Connection error. Check WiFi."); });
+  }
+
+  // ── Fake skip sequence ──
+  function runFakeSkips() {
+    if (skipsDone >= FAKE_SKIPS) {
+      connectToBrent();
+      return;
+    }
+    const delay = skipDelays[skipsDone % skipDelays.length];
+    // Show a dark "stranger" briefly before skipping
+    showOverlay("Searching…");
+    setTimeout(() => {
+      // Flash as if skipping someone
+      doFlash(() => {
+        skipsDone++;
+        showOverlay("Searching…");
+        setTimeout(runFakeSkips, 600);
+      });
+    }, delay);
+  }
+
+  // ── Connect to Brent ──
+  function connectToBrent() {
+    showOverlay("Connecting…");
+    const call = peer.call(BRENT_PEER_ID, localStream);
+    currentCall = call;
+
+    const timeout = setTimeout(() => {
+      showOverlay("No answer. Make sure Brent has host.html open!");
+    }, 10000);
+
+    call.on("stream", remoteStream => {
+      clearTimeout(timeout);
+      document.getElementById("remote-video").srcObject = remoteStream;
+      connected = true;
+      hideOverlay();
+    });
+
+    call.on("close", () => {
+      connected = false;
+      showOverlay("Disconnected.");
+    });
+
+    call.on("error", () => {
+      clearTimeout(timeout);
+      showOverlay("Call failed. Check Brent's connection.");
+    });
+  }
+
+  // ── Next button: only works before Brent connects ──
+  document.getElementById("btn-next").addEventListener("click", () => {
+    if (connected) return; // Lock "Next" once Brent is on
+    doFlash(() => {
+      skipsDone++;
+      showOverlay("Searching…");
+      setTimeout(runFakeSkips, 400);
+    });
+  });
+
+  // ── Stop button ──
+  document.getElementById("btn-stop").addEventListener("click", () => {
+    if (currentCall) currentCall.close();
+    connected = false;
+    showOverlay("Tap Next to start.");
+    document.getElementById("btn-next").textContent = "Start ▶";
+  });
+</script>
+</body>
+</html>

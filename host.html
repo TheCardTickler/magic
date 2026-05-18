@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Host</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; color: #fff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #remote-video { width: 100vw; height: 100vh; object-fit: cover; position: fixed; top: 0; left: 0; z-index: 0; }
+  #local-video { width: 120px; height: 160px; object-fit: cover; position: fixed; bottom: 20px; right: 20px; z-index: 10; border-radius: 10px; border: 2px solid #fff; }
+  #status { z-index: 20; font-size: 18px; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+<video id="remote-video" autoplay playsinline></video>
+<video id="local-video" autoplay playsinline muted></video>
+<div id="status">Waiting for connection...<br><small id="peer-id"></small></div>
+
+<script>
+  // BRENT'S FIXED PEER ID — must match index.html
+  const BRENT_PEER_ID = "magic-show-brent-2024";
+
+  const peer = new Peer(BRENT_PEER_ID, { debug: 0 });
+  let localStream;
+
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+    localStream = stream;
+    document.getElementById("local-video").srcObject = stream;
+    document.getElementById("status").innerHTML = "Ready. Waiting...<br><small>" + BRENT_PEER_ID + "</small>";
+  });
+
+  peer.on("call", call => {
+    call.answer(localStream);
+    document.getElementById("status").style.display = "none";
+    call.on("stream", remoteStream => {
+      document.getElementById("remote-video").srcObject = remoteStream;
+    });
+  });
+
+  peer.on("error", err => {
+    document.getElementById("status").innerText = "Error: " + err.message;
+  });
+</script>
+</body>
+</html>
